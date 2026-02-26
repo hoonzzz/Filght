@@ -2,10 +2,15 @@ import os
 import requests
 import json
 
-# 환경 변수 설정
-AMADEUS_KEY = os.environ['6oRB72lKYI6pmICcdYxFgaa6cvVpewRG']
-AMADEUS_SECRET = os.environ['tzrrGCjQMMkGyowa']
-SLACK_WEBHOOK_URL = os.environ['https://hooks.slack.com/services/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']
+# 환경 변수 안전하게 가져오기
+AMADEUS_KEY = os.environ.get('6oRB72lKYI6pmICcdYxFgaa6cvVpewRG')
+AMADEUS_SECRET = os.environ.get('tzrrGCjQMMkGyowa')
+SLACK_WEBHOOK_URL = os.environ.get('https://hooks.slack.com/services/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')
+
+# 키가 제대로 전달되지 않았을 경우 확인
+if not AMADEUS_KEY or not AMADEUS_SECRET:
+    print("❌ 에러: GitHub Secrets에서 API 키를 가져오지 못했습니다. YAML 설정을 확인하세요.")
+    exit(1)
 
 TARGET_PRICE_KRW = 3000000  # 성인 2명 합계 목표가
 
