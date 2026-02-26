@@ -2,6 +2,13 @@ import os
 import requests
 import json
 
+# 디버깅: 어떤 환경변수들이 들어왔는지 확인 (보안상 값은 출력 안됨)
+print("--- 환경 변수 체크 ---")
+print(f"AMADEUS_KEY 존재 여부: {'있음' if os.environ.get('AMADEUS_KEY') else '없음'}")
+print(f"AMADEUS_SECRET 존재 여부: {'있음' if os.environ.get('AMADEUS_SECRET') else '없음'}")
+print(f"SLACK_URL 존재 여부: {'있음' if os.environ.get('SLACK_WEBHOOK_URL') else '없음'}")
+print("--------------------")
+
 # 환경 변수 안전하게 가져오기
 AMADEUS_KEY = os.environ.get('6oRB72lKYI6pmICcdYxFgaa6cvVpewRG')
 AMADEUS_SECRET = os.environ.get('tzrrGCjQMMkGyowa')
