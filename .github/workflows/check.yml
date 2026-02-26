@@ -1,0 +1,23 @@
+name: Emirates Precise Checker
+
+on:
+  schedule:
+    # 10분마다 실행 설정
+    - cron: '*/30 * * * *'
+  workflow_dispatch:
+
+jobs:
+  run-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+      - run: pip install requests
+      - name: Run Monitoring
+        env:
+          AMADEUS_KEY: ${{ secrets.AMADEUS_KEY }}
+          AMADEUS_SECRET: ${{ secrets.AMADEUS_SECRET }}
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        run: python main.py
