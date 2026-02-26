@@ -4,9 +4,9 @@ import json
 
 # [1] 환경 변수 정의 - 이 이름들이 GitHub Secrets와 같아야 합니다.
 # os.environ.get('이름')에서 '이름'은 GitHub의 Secret Name과 일치해야 함!
-AMADEUS_KEY = os.environ.get('6oRB72lKYI6pmICcdYxFgaa6cvVpewRG')
-AMADEUS_SECRET = os.environ.get('tzrrGCjQMMkGyowa')
-SLACK_URL = os.environ.get('https://hooks.slack.com/services/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')
+AMADEUS_KEY = os.environ.get('AMADEUS_KEY')
+AMADEUS_SECRET = os.environ.get('AMADEUS_SECRET')
+SLACK_URL = os.environ.get('SLACK_WEBHOOK_URL')
 
 # [2] 목표 가격 설정 (예: 400만원)
 TARGET_PRICE = 3000000
