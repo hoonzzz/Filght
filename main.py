@@ -2,61 +2,65 @@ import os
 import requests
 import json
 
-# 환경 변수에서 정보 가져오기 (GitHub Secrets 설정 예정)
+# 환경 변수 설정
 AMADEUS_KEY = os.environ['AMADEUS_KEY']
 AMADEUS_SECRET = os.environ['AMADEUS_SECRET']
 SLACK_WEBHOOK_URL = os.environ['SLACK_WEBHOOK_URL']
 
-TARGET_PRICE_KRW = 3000000  # 성인 2명 합계 목표 금액 (예시)
+TARGET_PRICE_KRW = 4000000  # 성인 2명 합계 목표가
 
-def get_amadeus_token():
+def get_token():
     url = "https://test.api.amadeus.com/v1/security/oauth2/token"
-    data = {
-        "grant_type": "client_credentials",
-        "client_id": "6oRB72lKYI6pmICcdYxFgaa6cvVpewRG",
-        "client_secret": "tzrrGCjQMMkGyowa"
-    }
-    response = requests.post(url, data=data)
-    return response.json()['access_token']
+    data = {"grant_type": "client_credentials", "client_id": AMADEUS_KEY, "client_secret": AMADEUS_SECRET}
+    return requests.post(url, data=data).json()['access_token']
 
-def check_emirates_flights():
-    token = get_amadeus_token()
+def check_emirates_multi_city():
+    token = get_token()
+    # 다구간 조회를 위한 POST 엔드포인트
     url = "https://test.api.amadeus.com/v2/shopping/flight-offers"
     
-    # 다구간(Multi-city) 조회를 위한 파라미터 구성
-    # 실제 구현 시에는 API 문서에 따라 상세 JSON 바디를 구성해야 합니다.
-    params = {
-        "originLocationCode": "ICN",
-        "destinationLocationCode": "DXB",
-        "departureDate": "2026-11-15",
-        "adults": 2,
-        "includedAirlineCodes": "EK", # 에미레이트 항공만 필터링
-        "currencyCode": "KRW"
+    headers = {
+        "Authorization": f"Bearer {token}",
+        "Content-Type": "application/json"
     }
-    
-    headers = {"Authorization": f"Bearer {token}"}
-    response = requests.get(url, params=params, headers=headers)
+
+    # 정확한 다구간 조회 페이로드 (인천-두바이-몰디브-인천)
+    payload = {
+        "currencyCode": "KRW",
+        "originDestinations": [
+            {"id": "1", "originLocationCode": "ICN", "destinationLocationCode": "DXB", "departureDateTimeRange": {"date": "2026-11-15"}},
+            {"id": "2", "originLocationCode": "DXB", "destinationLocationCode": "MLE", "departureDateTimeRange": {"date": "2026-11-18"}},
+            {"id": "3", "originLocationCode": "MLE", "destinationLocationCode": "ICN", "departureDateTimeRange": {"date": "2026-11-22"}}
+        ],
+        "travelers": [{"id": "1", "travelerType": "ADULT"}, {"id": "2", "travelerType": "ADULT"}],
+        "sources": ["GDS"],
+        "searchCriteria": {
+            "flightFilters": {
+                "airlineRestrictions": {"includedAirlineCodes": ["EK"]}
+            }
+        }
+    }
+
+    response = requests.post(url, headers=headers, json=payload)
     
     if response.status_code == 200:
-        data = response.json()
-        if not data['data']:
-            print("조건에 맞는 항공권이 없습니다.")
+        offers = response.json().get('data', [])
+        if not offers:
+            print("조회된 항공권이 없습니다.")
             return
 
-        # 최저가 추출 (단순 예시 로직)
-        cheapest_offer = data['data'][0]
-        total_price = float(cheapest_offer['price']['total'])
-        
-        if total_price <= TARGET_PRICE_KRW:
-            send_slack_alert(total_price)
-    else:
-        print("API 호출 실패:", response.text)
+        # 가장 저렴한 옵션의 가격 확인
+        current_price = float(offers[0]['price']['total'])
+        print(f"현재 최저가: {current_price:,.0f}원")
 
-def send_slack_alert(price):
-    msg = {
-        "text": f"✈️ **에미레이트 특가 알림!**\n합계 금액: {price:,.0f}원\n지금 확인하세요!"
-    }
-    requests.post("https://hooks.slack.com/services/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", data=json.dumps(msg))
+        if current_price <= TARGET_PRICE_KRW:
+            send_slack(current_price)
+    else:
+        print(f"오류 발생: {response.text}")
+
+def send_slack(price):
+    payload = {"text": f"🚨 **에미레이트 특가 포착!**\n총액: {price:,.0f}원\n스케줄: ICN-DXB-MLE-ICN (성인 2명)"}
+    requests.post(SLACK_WEBHOOK_URL, json=payload)
 
 if __name__ == "__main__":
-    check_emirates_flights()
+    check_emirates_multi_city()
