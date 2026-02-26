@@ -2,13 +2,19 @@ import os
 import requests
 import json
 
-# 1. 환경 변수 가져오기 (이름 오타 방지를 위해 통일)
-AMADEUS_KEY = os.environ.get('6oRB72lKYI6pmICcdYxFgaa6cvVpewRG')
-AMADEUS_SECRET = os.environ.get('tzrrGCjQMMkGyowa')
-SLACK_URL = os.environ.get('https://hooks.slack.com/services/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')
+# 환경 변수
+AMADEUS_KEY = os.environ.get('AMADEUS_KEY')
+AMADEUS_SECRET = os.environ.get('AMADEUS_SECRET')
+SLACK_URL = os.environ.get('SLACK_WEBHOOK_URL')
 
-# 2. 목표 금액 설정 (테스트를 위해 일단 높게 설정 - 알림 오는지 확인용)
-TARGET_PRICE = 3000000  # 1,000만원 이하일 때 무조건 알림
+def send_slack(message):
+    """슬랙 전송 후 결과 로그를 출력합니다."""
+    payload = {"text": message}
+    res = requests.post(SLACK_URL, json=payload)
+    if res.status_code == 200:
+        print(f"✅ 슬랙 전송 성공: {message}")
+    else:
+        print(f"❌ 슬랙 전송 실패 (에러코드: {res.status_code}): {res.text}")
 
 def get_token():
     url = "https://test.api.amadeus.com/v1/security/oauth2/token"
@@ -17,15 +23,17 @@ def get_token():
     return response.json().get('access_token')
 
 def check_emirates():
+    # [테스트] 실행 시작하자마자 슬랙으로 신호 보내기
+    send_slack("🚀 에미레이트 감시 시스템이 정상적으로 가동되었습니다! 가격을 조회합니다.")
+
     token = get_token()
     if not token:
-        print("❌ Amadeus 토큰 발급 실패. API 키를 확인하세요.")
+        print("❌ 토큰 발급 실패")
         return
 
     url = "https://test.api.amadeus.com/v2/shopping/flight-offers"
     headers = {"Authorization": f"Bearer {token}", "Content-Type": "application/json"}
     
-    # 다구간 조회 본문 (인천-두바이-몰디브-인천)
     payload = {
         "currencyCode": "KRW",
         "originDestinations": [
@@ -43,16 +51,12 @@ def check_emirates():
         data = res.json().get('data', [])
         if data:
             price = float(data[0]['price']['total'])
-            print(f"✈️ 현재 에미레이트 최저가: {price:,.0f}원")
-            
-            if price <= TARGET_PRICE:
-                msg = f"🔔 **에미레이트 알림!**\n총액: {price:,.0f}원\n스케줄: 11/15 ICN-DXB | 11/18 DXB-MLE | 11/22 MLE-ICN"
-                requests.post(SLACK_URL, json={"text": msg})
-                print("✅ 슬랙 알림 전송 완료!")
+            print(f"✈️ 조회된 가격: {price:,.0f}원")
+            send_slack(f"🔔 현재 최저가 포착: {price:,.0f}원")
         else:
-            print("조회 결과가 없습니다.")
+            print("조회 결과가 없습니다. (날짜/구간에 에미레이트 항공편이 없을 수 있습니다)")
     else:
-        print(f"❌ API 호출 에러: {res.text}")
+        print(f"❌ API 에러: {res.text}")
 
 if __name__ == "__main__":
     check_emirates()
