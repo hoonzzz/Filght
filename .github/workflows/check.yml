@@ -2,7 +2,6 @@ name: Emirates Precise Checker
 
 on:
   schedule:
-    # 10분마다 실행 설정
     - cron: '*/30 * * * *'
   workflow_dispatch:
 
