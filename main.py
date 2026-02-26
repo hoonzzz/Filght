@@ -3,11 +3,11 @@ import requests
 import json
 
 # 환경 변수 설정
-AMADEUS_KEY = os.environ['AMADEUS_KEY']
-AMADEUS_SECRET = os.environ['AMADEUS_SECRET']
-SLACK_WEBHOOK_URL = os.environ['SLACK_WEBHOOK_URL']
+AMADEUS_KEY = os.environ['6oRB72lKYI6pmICcdYxFgaa6cvVpewRG']
+AMADEUS_SECRET = os.environ['tzrrGCjQMMkGyowa']
+SLACK_WEBHOOK_URL = os.environ['https://hooks.slack.com/services/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']
 
-TARGET_PRICE_KRW = 4000000  # 성인 2명 합계 목표가
+TARGET_PRICE_KRW = 3000000  # 성인 2명 합계 목표가
 
 def get_token():
     url = "https://test.api.amadeus.com/v1/security/oauth2/token"
